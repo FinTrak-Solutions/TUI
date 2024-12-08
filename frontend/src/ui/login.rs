@@ -35,7 +35,6 @@ impl LoginPage {
     }
 
     pub fn render(&self, f: &mut Frame) {
-        // Set the global background color to white
         let background = Block::default().style(Style::default().bg(Color::White));
         f.render_widget(background, f.area());
 
@@ -48,7 +47,7 @@ impl LoginPage {
                     Constraint::Length(3),
                     Constraint::Length(3),
                     Constraint::Min(3),
-                    Constraint::Length(2),
+                    Constraint::Length(3),
                 ]
                     .as_ref(),
             )
@@ -73,13 +72,8 @@ impl LoginPage {
         self.password.render(f, chunks[2], self.active_field == 1);
 
         let response_paragraph = Paragraph::new(self.response_message.clone())
-            .block(Block::default().title("Response").borders(Borders::ALL).style(Style::default().bg(Color::White)));
+            .block(Block::default().title("Response").borders(Borders::ALL));
         f.render_widget(response_paragraph, chunks[3]);
-
-        let notice = Paragraph::new("Esc to quit | Hit Enter to log in")
-            .style(Style::default().fg(Color::Black).bg(Color::White))
-            .alignment(Alignment::Center);
-        f.render_widget(notice, chunks[4]);
     }
 
     pub async fn handle_input(&mut self, key: KeyCode, _modifiers: KeyModifiers) -> bool {
