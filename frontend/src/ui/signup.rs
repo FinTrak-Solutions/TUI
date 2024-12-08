@@ -82,6 +82,13 @@ impl SignupPage {
         let response_paragraph = Paragraph::new(self.response_message.clone())
             .block(Block::default().title("Response").borders(Borders::ALL));
         f.render_widget(response_paragraph, chunks[5]);
+
+        // Render the bottom notice
+        let notice_text = "Esc to quit | hit Enter to create new user";
+        let notice_paragraph = Paragraph::new(notice_text)
+            .style(Style::default().fg(Color::DarkGray).bg(Color::White)) // Grey text, white background
+            .alignment(Alignment::Center);
+        f.render_widget(notice_paragraph, chunks[6]);
     }
 
     pub async fn handle_input(&mut self, key: KeyCode, _modifiers: KeyModifiers) -> bool {
