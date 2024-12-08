@@ -21,42 +21,26 @@ impl InputField {
         }
     }
 
+    #[allow(unused_variables)]
     pub fn render(&self, f: &mut Frame, area: Rect, is_active: bool) {
-        // Mask content if it's a password field
         let display_content = if self.is_password {
-            let stars = "*".repeat(self.content.len());
-            if is_active {
-                format!("{}|", stars) // Add a blinking cursor to the active field
-            } else {
-                stars
-            }
+            "*".repeat(self.content.len())
         } else {
-            if is_active {
-                format!("{}|", self.content)
-            } else {
-                self.content.clone()
-            }
+            self.content.clone()
         };
 
-        // Set active field style (yellow border for active, black otherwise)
-        let border_style = if is_active {
-            Style::default().fg(Color::Yellow) // Highlight active box with yellow border
-        } else {
-            Style::default().fg(Color::Black) // Default box edge (border) color is black
-        };
-
-        // Paragraph with black text for input visibility
         let paragraph = Paragraph::new(display_content)
-            .style(Style::default().fg(Color::Black)) // Text color is black
+            .style(Style::default().fg(Color::Black).bg(Color::White))
             .block(
                 Block::default()
                     .title(self.label.as_str())
                     .borders(Borders::ALL)
-                    .style(border_style), // Apply border color
+                    .style(Style::default().bg(Color::White).fg(Color::Black)),
             );
 
         f.render_widget(paragraph, area);
     }
+
 
     pub fn handle_input(&mut self, key: KeyCode) {
         match key {

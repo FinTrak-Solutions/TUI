@@ -15,23 +15,23 @@ impl CoverPage {
     }
 
     pub fn render(&self, f: &mut Frame) {
-        // Calculate vertical space dynamically to center the logo
+        let background = Block::default().style(Style::default().bg(Color::White));
+        f.render_widget(background, f.area());
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
             .constraints(
                 [
-                    Constraint::Percentage(20), // Top margin to center logo
-                    Constraint::Length(10),     // Logo height (adjust as needed)
-                    Constraint::Percentage(65), // Bottom margin
-                    Constraint::Length(3),      // Notice area
+                    Constraint::Percentage(20),
+                    Constraint::Length(10),
+                    Constraint::Percentage(65),
+                    Constraint::Length(3),
                 ]
                     .as_ref(),
             )
             .split(f.area());
 
-        // ASCII Logo for FinTracker
-        // Generated using https://patorjk.com/software/taag/#p=testall&h=2&v=1&f=Standard&t=FinTrack
         let ascii_logo = r#"
  ________ ___  ________   _________  ________  ________  ________  ___  __
 |\  _____\\  \|\   ___  \|\___   ___\\   __  \|\   __  \|\   ____\|\  \|\  \
@@ -42,18 +42,17 @@ impl CoverPage {
          \|__|    \|__|\|__| \|__|    \|__|  \|__|\|__|\|__|\|__|\|_______|\|__| \|__|
 "#;
 
-        // Render the logo in the center (vertically and horizontally)
         let logo_paragraph = Paragraph::new(ascii_logo)
-            .style(Style::default().fg(Color::Yellow))
+            .style(Style::default().fg(Color::Yellow).bg(Color::White))
             .alignment(Alignment::Center);
         f.render_widget(logo_paragraph, chunks[1]);
 
-        // Render the notice at the bottom
         let notice = Paragraph::new("Esc to quit | 1 to signup | 2 to login")
-            .style(Style::default().fg(Color::White))
+            .style(Style::default().fg(Color::Black).bg(Color::White))
             .alignment(Alignment::Center);
         f.render_widget(notice, chunks[3]);
     }
+
 
     pub async fn handle_input(&self, key: KeyCode) -> bool {
         // Quit on Esc

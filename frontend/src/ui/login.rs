@@ -35,23 +35,25 @@ impl LoginPage {
     }
 
     pub fn render(&self, f: &mut Frame) {
-        // Layout with space for the ASCII title, input fields, and response
+        // Set the global background color to white
+        let background = Block::default().style(Style::default().bg(Color::White));
+        f.render_widget(background, f.area());
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .margin(1) // Margin outside the whole form
+            .margin(1)
             .constraints(
                 [
-                    Constraint::Length(8), // ASCII title height
-                    Constraint::Length(3), // Email field height
-                    Constraint::Length(3), // Password field height
-                    Constraint::Min(3),    // Response box height
-                    Constraint::Length(2), // Notice height
+                    Constraint::Length(8),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Min(3),
+                    Constraint::Length(2),
                 ]
                     .as_ref(),
             )
             .split(f.area());
 
-        // Render the ASCII title at the top
         let ascii_title = r#"
  ________ ___  ________   _________  ________  ________  ________  ___  __
 |\  _____\\  \|\   ___  \|\___   ___\\   __  \|\   __  \|\   ____\|\  \|\  \
@@ -63,22 +65,19 @@ impl LoginPage {
 "#;
 
         let title_paragraph = Paragraph::new(ascii_title)
-            .style(Style::default().fg(Color::Yellow)) // Yellow color for the title
-            .alignment(Alignment::Center); // Center align the title
+            .style(Style::default().fg(Color::Yellow).bg(Color::White))
+            .alignment(Alignment::Center);
         f.render_widget(title_paragraph, chunks[0]);
 
-        // Render each input field
         self.email.render(f, chunks[1], self.active_field == 0);
         self.password.render(f, chunks[2], self.active_field == 1);
 
-        // Render the response box
         let response_paragraph = Paragraph::new(self.response_message.clone())
-            .block(Block::default().title("Response").borders(Borders::ALL));
+            .block(Block::default().title("Response").borders(Borders::ALL).style(Style::default().bg(Color::White)));
         f.render_widget(response_paragraph, chunks[3]);
 
-        // Render the centered notice
         let notice = Paragraph::new("Esc to quit | Hit Enter to log in")
-            .style(Style::default().fg(Color::White))
+            .style(Style::default().fg(Color::Black).bg(Color::White))
             .alignment(Alignment::Center);
         f.render_widget(notice, chunks[4]);
     }

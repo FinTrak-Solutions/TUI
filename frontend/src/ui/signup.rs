@@ -39,6 +39,8 @@ impl SignupPage {
     }
 
     pub fn render(&self, f: &mut Frame) {
+        let background = Block::default().style(Style::default().bg(Color::White));
+        f.render_widget(background, f.area());
         // Layout with space for the ASCII title, input fields, and response
         let chunks = Layout::default()
             .direction(Direction::Vertical)
