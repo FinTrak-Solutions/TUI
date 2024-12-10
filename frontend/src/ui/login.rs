@@ -5,10 +5,12 @@ use ratatui::{
     style::{Color, Style},
     Frame,
 };
-use serde::Serialize;
+#[allow(unused_imports)]
+use serde::{Deserialize, Serialize};
 use reqwest::Client;
 
 use crate::ui::components::InputField;
+use crate::ui::homepage::Homepage;
 
 #[derive(Serialize)]
 struct SignupData {
@@ -83,8 +85,12 @@ impl LoginPage {
         f.render_widget(notice_paragraph, chunks[4]);
     }
 
-    pub async fn handle_input(&mut self, key: KeyCode, _modifiers: KeyModifiers) -> bool {
-        // Detect Escape (Esc) key for quitting
+    pub async fn handle_input(
+        &mut self,
+        key: KeyCode,
+        _modifiers: KeyModifiers,
+        homepage: &mut Option<Homepage>,
+    ) -> bool {
         if key == KeyCode::Esc {
             return true; // Signal to quit
         }
@@ -97,44 +103,64 @@ impl LoginPage {
                 self.active_field = if self.active_field == 0 { 1 } else { self.active_field - 1 };
             }
             KeyCode::Enter => {
-                self.submit().await;
-            }
-            _ => {
-                match self.active_field {
-                    0 => self.email.handle_input(key),
-                    1 => self.password.handle_input(key),
-                    _ => {}
+                self.submit(homepage).await;
+
+                // Transition to homepage if login is successful
+                if homepage.is_some() {
+                    return true; // Signal that we should transition state
                 }
             }
+            _ => match self.active_field {
+                0 => self.email.handle_input(key),
+                1 => self.password.handle_input(key),
+                _ => {}
+            },
         }
         false
     }
 
-    pub async fn submit(&mut self) {
-        // Create a default username for the login request
+
+    pub async fn submit(&mut self, homepage: &mut Option<Homepage>) {
         let client = Client::new();
         let login_data = SignupData {
-            username: "_login".to_string(), // Default username (not used in login)
+            username: "_login".to_string(),
             email: self.email.content.clone(),
             password: self.password.content.clone(),
         };
 
-        match client.post("http://0.0.0.0:8000/signup")
+        match client
+            .post("http://0.0.0.0:8000/signup")
             .json(&login_data)
             .send()
             .await
         {
             Ok(response) => {
                 let status = response.status();
-                let message = response
-                    .text()
-                    .await
-                    .unwrap_or_else(|_| "Failed to parse response body".to_string());
+                let raw_body = response.text().await.unwrap_or_default();
+
+                // Log raw response for debugging
+                self.response_message = format!("Status: {}\nBody: {}", status, raw_body);
 
                 if status.is_success() {
-                    self.response_message = format!("STATUS_CODE: {}\nMessage: {}", status, message);
+                    if raw_body.contains("Login successful") {
+                        // Extract username from the raw body
+                        if let Some(username) = raw_body.split_whitespace().next() {
+                            *homepage = Some(Homepage::new(
+                                username.to_string(),
+                                self.email.content.clone(),
+                            ));
+                            self.response_message = "Login successful! Redirecting to homepage...".to_string();
+                        } else {
+                            self.response_message = "Login successful, but failed to extract username.".to_string();
+                        }
+                    } else {
+                        self.response_message = "Login successful, but response format is unexpected.".to_string();
+                    }
                 } else {
-                    self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, message);
+                    self.response_message = format!(
+                        "Login failed: {}\nMessage: {}",
+                        status, raw_body
+                    );
                 }
             }
             Err(e) => {
@@ -142,4 +168,5 @@ impl LoginPage {
             }
         }
     }
+
 }
