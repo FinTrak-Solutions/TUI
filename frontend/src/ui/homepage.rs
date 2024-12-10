@@ -1,7 +1,7 @@
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     widgets::{Block, Borders, Paragraph},
-    style::{Color, Style},
+    style::{Color, Modifier, Style},
     Frame,
 };
 
@@ -25,20 +25,38 @@ impl Homepage {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Greeting
-                    Constraint::Min(10),   // Main blocks
-                    Constraint::Length(3), // Notice
+                    Constraint::Length(3),  // Greeting row
+                    Constraint::Min(10),    // Main blocks
+                    Constraint::Length(3),  // Notice
                 ]
                     .as_ref(),
             )
             .split(f.area());
 
-        // Greeting: Welcome back <username>
+        // Greeting: Welcome back <username> on the left
+        let horizontal_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints(
+                [
+                    Constraint::Percentage(50), // Left side for greeting
+                    Constraint::Percentage(50), // Centered HOMEPAGE
+                ]
+                    .as_ref(),
+            )
+            .split(chunks[0]);
+
         let greeting = format!("Welcome back, {}", self.username);
         let greeting_paragraph = Paragraph::new(greeting)
             .style(Style::default().fg(Color::Black).bg(Color::White))
             .alignment(Alignment::Left);
-        f.render_widget(greeting_paragraph, chunks[0]);
+
+        // HOMEPAGE title centered and bold
+        let title = Paragraph::new("HOMEPAGE")
+            .style(Style::default().fg(Color::Black).bg(Color::White).add_modifier(Modifier::BOLD))
+            .alignment(Alignment::Right);
+
+        f.render_widget(greeting_paragraph, horizontal_layout[0]);
+        f.render_widget(title, horizontal_layout[1]);
 
         // Main horizontal blocks: Accounts, Categories, Report
         let main_chunks = Layout::default()
@@ -63,7 +81,7 @@ impl Homepage {
         f.render_widget(report_block, main_chunks[2]);
 
         // Bottom notice
-        let notice = Paragraph::new("Esc to quit | Use arrow keys to navigate")
+        let notice = Paragraph::new("Esc to quit | 1 to Account | 2 to Category | 3 to Report")
             .style(Style::default().fg(Color::DarkGray).bg(Color::White))
             .alignment(Alignment::Center);
         f.render_widget(notice, chunks[2]);
