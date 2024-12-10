@@ -10,25 +10,21 @@
 ---
 ## **🗂️ Project Structure**
 
-Here is the **tree view** of the **TUI frontend project**. This structure is designed to keep files organized and make it easy to add new pages, components, and utilities.
+| **Page**           | **Assign to** | **Done or Not** |
+|-------------------|---------------|-----------------|
+| Cover             | Damian        |                 |
+| Signup            | Damian        |                 |
+| Login             | Damian        |                 |
+| Home              | Damian        |                 |
+| Account           |               |                 |
+| Account Detail    |               |                 |
+| Create Account    |               |                 |
+| Category          |               |                 |
+| Category Detail   |               |                 |
+| Create Category   |               |                 |
+| Create Transaction|               |                 |
+| Report            | Damian        |                 |
 
-```
-TUI/
-├── Cargo.toml               # Rust package manifest file
-├── src/
-│   ├── main.rs              # Entry point for the application
-│   ├── ui/
-│   │   ├── components.rs    # Reusable input field components
-│   │   ├── cover.rs         # Cover page (first page of the TUI)
-│   │   ├── login.rs         # Login page
-│   │   ├── signup.rs        # Signup page
-│   │   └── mod.rs           # Exposes all UI pages for easy imports
-│   └── utils/               # Utility functions, helpers, or extensions (optional)
-│
-├── assets/                  # Place for ASCII art or static text files (optional)
-├── README.md                # Instructions for the project
-└── .gitignore               # Ignore build files, node_modules, etc.
-```
 
 ---
 
