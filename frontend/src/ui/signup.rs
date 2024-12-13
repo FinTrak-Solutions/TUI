@@ -1,7 +1,7 @@
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Paragraph},
     style::{Color, Style},
     Frame,
 };
@@ -47,13 +47,13 @@ impl SignupPage {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(8),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(3),
-                    Constraint::Length(3),
+                    Constraint::Length(8),  // ASCII Title
+                    Constraint::Length(3),  // Username Input
+                    Constraint::Length(3),  // Email Input
+                    Constraint::Length(3),  // Password Input
+                    Constraint::Length(3),  // Confirm Password Input
+                    Constraint::Length(3),  // Response message
+                    Constraint::Length(3),  // Bottom Notice
                 ]
                     .as_ref(),
             )
@@ -79,11 +79,13 @@ impl SignupPage {
         self.password.render(f, chunks[3], self.active_field == 2);
         self.confirm_password.render(f, chunks[4], self.active_field == 3);
 
+        // Response message displayed between the inputs and the bottom notice
         let response_paragraph = Paragraph::new(self.response_message.clone())
-            .block(Block::default().title("Response").borders(Borders::ALL));
+            .style(Style::default().fg(Color::Red).bg(Color::White)) // Response message in red
+            .alignment(Alignment::Center);
         f.render_widget(response_paragraph, chunks[5]);
 
-        // Render the bottom notice
+        // Bottom notice
         let notice_text = "Esc to quit | Hit Enter to create new user";
         let notice_paragraph = Paragraph::new(notice_text)
             .style(Style::default().fg(Color::DarkGray).bg(Color::White)) // Grey text, white background
@@ -92,7 +94,6 @@ impl SignupPage {
     }
 
     pub async fn handle_input(&mut self, key: KeyCode, _modifiers: KeyModifiers) -> bool {
-        // Detect Escape (Esc) key for quitting
         if key == KeyCode::Esc {
             return false; // Navigate back to Cover
         }
@@ -145,11 +146,20 @@ impl SignupPage {
                     .await
                     .unwrap_or_else(|_| "Failed to parse response body".to_string());
 
-                if status == 201 {
-                    self.response_message = "Signup successful! Redirecting to login...".to_string();
-                    return true; // Return true to navigate to login
-                } else {
-                    self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, message);
+                match status.as_u16() {
+                    201 => {
+                        self.response_message = "Signup successful! Redirecting to login...".to_string();
+                        return true; // Return true to navigate to login
+                    }
+                    200 if message.contains("Login successful") => {
+                        self.response_message = "Email already registered. Please try another one.".to_string();
+                    }
+                    400 => {
+                        self.response_message = "Failed to sign up. Please check your inputs.".to_string();
+                    }
+                    _ => {
+                        self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, message);
+                    }
                 }
             }
             Err(e) => {
