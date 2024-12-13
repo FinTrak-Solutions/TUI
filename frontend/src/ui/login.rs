@@ -2,7 +2,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Style},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Paragraph},
     Frame,
 };
 use reqwest::Client;
@@ -48,13 +48,13 @@ impl LoginPage {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(8),
-                    Constraint::Length(3),
-                    Constraint::Length(3),
-                    Constraint::Min(3),
-                    Constraint::Length(3),
+                    Constraint::Length(8),  // ASCII Title
+                    Constraint::Length(3),  // Email Input
+                    Constraint::Length(3),  // Password Input
+                    Constraint::Length(3),  // Response message
+                    Constraint::Length(3),  // Bottom Notice
                 ]
-                .as_ref(),
+                    .as_ref(),
             )
             .split(f.area());
 
@@ -76,12 +76,14 @@ impl LoginPage {
         self.email.render(f, chunks[1], self.active_field == 0);
         self.password.render(f, chunks[2], self.active_field == 1);
 
+        // Response message displayed between the password and the bottom notice
         let response_paragraph = Paragraph::new(self.response_message.clone())
-            .block(Block::default().title("Response").borders(Borders::ALL));
+            .style(Style::default().fg(Color::Red).bg(Color::White)) // Red message for errors
+            .alignment(Alignment::Center);
         f.render_widget(response_paragraph, chunks[3]);
 
         // Render the bottom notice
-        let notice_text = "Esc to quit | hit Enter to login";
+        let notice_text = "Esc to quit | Hit Enter to login";
         let notice_paragraph = Paragraph::new(notice_text)
             .style(Style::default().fg(Color::DarkGray).bg(Color::White)) // Grey text, white background
             .alignment(Alignment::Center);
@@ -144,33 +146,22 @@ impl LoginPage {
                 let status = response.status();
                 let raw_body = response.text().await.unwrap_or_default();
 
-                // Log raw response for debugging
-                self.response_message = format!("Status: {}\nBody: {}", status, raw_body);
-
-                if status.is_success() {
-                    if raw_body.contains("Login successful") {
-                        // Get report overview for this user
-                        self.report_overview = get_report_overview(login_data.email.clone()).await;
-                        // Extract username from the raw body
-                        if let Some(username) = raw_body.split_whitespace().next() {
-                            *homepage = Some(Homepage::new(
-                                username.to_string(),
-                                self.email.content.clone(),
-                                self.report_overview.clone(),
-                            ));
-                            self.response_message =
-                                "Login successful! Redirecting to homepage...".to_string();
-                        } else {
-                            self.response_message =
-                                "Login successful, but failed to extract username.".to_string();
-                        }
-                    } else {
-                        self.response_message =
-                            "Login successful, but response format is unexpected.".to_string();
+                if status == 200 && raw_body.contains("Login successful") {
+                    self.report_overview = get_report_overview(login_data.email.clone()).await;
+                    if let Some(username) = raw_body.split_whitespace().next() {
+                        *homepage = Some(Homepage::new(
+                            username.to_string(),
+                            self.email.content.clone(),
+                            self.report_overview.clone(),
+                        ));
+                        self.response_message = "Login successful! Redirecting to homepage...".to_string();
                     }
+                } else if status == 400 {
+                    self.response_message = "Invalid password. Please try again.".to_string();
+                } else if status == 201 {
+                    self.response_message = "Email not registered. Please sign up first.".to_string();
                 } else {
-                    self.response_message =
-                        format!("Login failed: {}\nMessage: {}", status, raw_body);
+                    self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, raw_body);
                 }
             }
             Err(e) => {
