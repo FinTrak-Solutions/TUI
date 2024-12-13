@@ -10,20 +10,20 @@
 ---
 ## **🗂️ Project Structure**
 
-| **Page**           | **Assign to** | **Done or Not** |
-|-------------------|---------------|-----------------|
-| Cover             | Damian        |                 |
-| Signup            | Damian        |                 |
-| Login             | Damian        |                 |
-| Home              | Damian        |                 |
-| Account           | Ellen         |                 |
-| Account Detail    | Ellen         |                 |
-| Create Account    | Ellen         |                 |
-| Category          | TBD           |                 |
-| Category Detail   | TBD           |                 |
-| Create Category   | TBD           |                 |
-| Create Transaction| Damian        |                 |
-| Report            | Sarah         |                 |
+| **Page**           | **Assign to**  | **Done or Not** |
+|-------------------|----------------|-----------------|
+| Cover             | Damian         | ✅ Complete      |
+| Signup            | Damian         | ✅ Complete      |
+| Login             | Damian         | ✅ Complete      |
+| Home              | Sarah & Damian |                 |
+| Account           | Ellen          |                 |
+| Account Detail    | Ellen          |                 |
+| Create Account    | Ellen          |                 |
+| Category          | TBD            |                 |
+| Category Detail   | TBD            |                 |
+| Create Category   | TBD            |                 |
+| Create Transaction| Damian         | ✅ Complete      |
+| Report            | Sarah          |                 |
 
 
 ---
