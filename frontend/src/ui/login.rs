@@ -1,16 +1,17 @@
 use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
-    widgets::{Block, Borders, Paragraph},
     style::{Color, Style},
+    widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use reqwest::Client;
 #[allow(unused_imports)]
 use serde::{Deserialize, Serialize};
-use reqwest::Client;
 
 use crate::ui::components::InputField;
 use crate::ui::homepage::Homepage;
+use crate::ui::report::*;
 
 #[derive(Serialize)]
 struct SignupData {
@@ -24,6 +25,7 @@ pub struct LoginPage {
     pub password: InputField,
     pub active_field: usize,
     pub response_message: String,
+    pub report_overview: String,
 }
 
 impl LoginPage {
@@ -33,6 +35,7 @@ impl LoginPage {
             password: InputField::new("Password", true),
             active_field: 0,
             response_message: String::new(),
+            report_overview: String::from("To be filled in"),
         }
     }
 
@@ -51,7 +54,7 @@ impl LoginPage {
                     Constraint::Min(3),
                     Constraint::Length(3),
                 ]
-                    .as_ref(),
+                .as_ref(),
             )
             .split(f.area());
 
@@ -100,7 +103,11 @@ impl LoginPage {
                 self.active_field = (self.active_field + 1) % 2; // Cycle through input fields
             }
             KeyCode::BackTab => {
-                self.active_field = if self.active_field == 0 { 1 } else { self.active_field - 1 };
+                self.active_field = if self.active_field == 0 {
+                    1
+                } else {
+                    self.active_field - 1
+                };
             }
             KeyCode::Enter => {
                 self.submit(homepage).await;
@@ -118,7 +125,6 @@ impl LoginPage {
         }
         false
     }
-
 
     pub async fn submit(&mut self, homepage: &mut Option<Homepage>) {
         let client = Client::new();
@@ -143,24 +149,28 @@ impl LoginPage {
 
                 if status.is_success() {
                     if raw_body.contains("Login successful") {
+                        // Get report overview for this user
+                        self.report_overview = get_report_overview(login_data.email.clone()).await;
                         // Extract username from the raw body
                         if let Some(username) = raw_body.split_whitespace().next() {
                             *homepage = Some(Homepage::new(
                                 username.to_string(),
                                 self.email.content.clone(),
+                                self.report_overview.clone(),
                             ));
-                            self.response_message = "Login successful! Redirecting to homepage...".to_string();
+                            self.response_message =
+                                "Login successful! Redirecting to homepage...".to_string();
                         } else {
-                            self.response_message = "Login successful, but failed to extract username.".to_string();
+                            self.response_message =
+                                "Login successful, but failed to extract username.".to_string();
                         }
                     } else {
-                        self.response_message = "Login successful, but response format is unexpected.".to_string();
+                        self.response_message =
+                            "Login successful, but response format is unexpected.".to_string();
                     }
                 } else {
-                    self.response_message = format!(
-                        "Login failed: {}\nMessage: {}",
-                        status, raw_body
-                    );
+                    self.response_message =
+                        format!("Login failed: {}\nMessage: {}", status, raw_body);
                 }
             }
             Err(e) => {
@@ -168,5 +178,4 @@ impl LoginPage {
             }
         }
     }
-
 }

@@ -1,5 +1,6 @@
-pub mod signup;
-pub mod cover;
 pub mod components;
-pub mod login;
+pub mod cover;
 pub mod homepage;
+pub mod login;
+pub mod report;
+pub mod signup;
