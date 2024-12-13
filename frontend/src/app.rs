@@ -1,6 +1,7 @@
 use crate::ui::{signup::SignupPage, cover::CoverPage, login::LoginPage, homepage::Homepage, account_main::AccountMain, category_main::CategoryMain, report_main::ReportMain};
 use crate::ui::transaction_create::TransactionCreate;
-use crossterm::event::KeyCode;
+use crossterm::event::{self, KeyCode, KeyModifiers, Event};
+use std::time::Duration;
 
 pub enum State {
     Cover,          // Cover page
@@ -55,7 +56,7 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                     }
                 }
                 State::AccountMain => {
-                    if let Some(ref account_main) = app.account_main {
+                    if let Some(ref mut account_main) = app.account_main {
                         account_main.render(f);
                     }
                 }
@@ -113,7 +114,9 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                     if let Some(ref homepage) = app.homepage {
                         match key_event.code {
                             KeyCode::Char('1') => {
-                                app.account_main = Some(AccountMain::new());
+                                let mut account_main = AccountMain::new(homepage.email.clone());
+                                account_main.initialize().await;
+                                app.account_main = Some(account_main);
                                 app.state = State::AccountMain;
                             }
                             KeyCode::Char('2') => {
@@ -133,8 +136,10 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                     }
                 }
                 State::AccountMain => {
-                    if key_event.code == KeyCode::Esc {
-                        app.state = State::Homepage; // Return to Homepage on Esc
+                    if let Some(ref mut account_main) = app.account_main {
+                        if account_main.handle_input(key_event.code, key_event.modifiers).await {
+                            app.state = State::Homepage;
+                        }
                     }
                 }
                 State::CategoryMain => {
