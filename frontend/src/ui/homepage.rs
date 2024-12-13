@@ -7,7 +7,6 @@ use ratatui::{
 
 pub struct Homepage {
     pub username: String,
-    #[allow(dead_code)]
     pub email: String,
     pub report_overview: String,
 }
@@ -26,15 +25,15 @@ impl Homepage {
         let background = Block::default().style(Style::default().bg(Color::White));
         f.render_widget(background, f.area());
 
-        // Split the frame into three vertical chunks
+        // Split the frame into four vertical chunks
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3), // Greeting row
-                    Constraint::Min(10),   // Main blocks
-                    Constraint::Length(3), // Notice
+                    Constraint::Length(3),  // Greeting row
+                    Constraint::Min(10),    // Main blocks (Accounts, Categories, Report)
+                    Constraint::Length(5),  // Navigation notice (with extra padding)
                 ]
                     .as_ref(),
             )
@@ -84,25 +83,34 @@ impl Homepage {
             )
             .split(chunks[1]);
 
-        // Accounts block (click 1 to jump)
+        // Accounts block (press 1 to jump)
         let accounts_block = Block::default().title("Accounts").borders(Borders::ALL);
         f.render_widget(accounts_block, main_chunks[0]);
 
-        // Categories block (click 2 to jump)
+        // Categories block (press 2 to jump)
         let categories_block = Block::default().title("Categories").borders(Borders::ALL);
         f.render_widget(categories_block, main_chunks[1]);
 
-        // Report block (click 3 to jump) with report overview
+        // Report block (press 3 to jump) with report overview
         let report_block = Block::default().title("Report").borders(Borders::ALL);
         let report_paragraph = Paragraph::new(self.report_overview.clone())
             .wrap(Wrap { trim: true })
             .block(report_block);
         f.render_widget(report_paragraph, main_chunks[2]);
 
-        // Bottom notice for navigation instructions
+        // Bottom notice for navigation instructions (Esc to quit, etc.)
         let notice = Paragraph::new("Esc to quit | 1 to Account | 2 to Category | 3 to Report")
             .style(Style::default().fg(Color::DarkGray).bg(Color::White))
             .alignment(Alignment::Center);
         f.render_widget(notice, chunks[2]);
+
+        // Additional notice for transaction creation
+        let create_transaction_notice = Paragraph::new("Press 'n' to create a new transaction")
+            .style(Style::default().fg(Color::DarkGray).bg(Color::White))
+            .alignment(Alignment::Center);
+        f.render_widget(create_transaction_notice, Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(1), Constraint::Length(1)].as_ref())
+            .split(chunks[2])[1]); // Place it right below the first notice
     }
 }

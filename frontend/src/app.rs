@@ -1,4 +1,5 @@
 use crate::ui::{signup::SignupPage, cover::CoverPage, login::LoginPage, homepage::Homepage, account_main::AccountMain, category_main::CategoryMain, report_main::ReportMain};
+use crate::ui::transaction_create::TransactionCreate;
 use crossterm::event::KeyCode;
 
 pub enum State {
@@ -8,7 +9,8 @@ pub enum State {
     Homepage,       // Homepage
     AccountMain,    // Account Main page
     CategoryMain,   // Category Main page
-    ReportMain,         // Report page
+    ReportMain,     // Report page
+    TransactionCreate, // Transaction Create page
 }
 
 pub struct App {
@@ -20,6 +22,7 @@ pub struct App {
     pub account_main: Option<AccountMain>, // Account Main (accessed from homepage)
     pub category_main: Option<CategoryMain>, // Category Main (accessed from homepage)
     pub report_main: Option<ReportMain>,      // Report page (accessed from homepage)
+    pub transaction_create: Option<TransactionCreate>, // Transaction Create page
 }
 
 impl App {
@@ -33,6 +36,7 @@ impl App {
             account_main: None, // Initially, account_main is not set
             category_main: None, // Initially, category_main is not set
             report_main: None, // Initially, report page is not set
+            transaction_create: None, // Initially, transaction_create is not set
         }
     }
 }
@@ -65,10 +69,15 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                         report_main.render(f);
                     }
                 }
+                State::TransactionCreate => {
+                    if let Some(ref transaction_create) = app.transaction_create {
+                        transaction_create.render(f);
+                    }
+                }
             }
         })?;
 
-        // Handle user input
+        // Handle user input (outside of draw)
         if let crossterm::event::Event::Key(key_event) = crossterm::event::read()? {
             match app.state {
                 State::Cover => {
@@ -101,7 +110,6 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                     if key_event.code == KeyCode::Esc {
                         break; // Quit from Homepage
                     }
-                    #[allow(unused_variables)]
                     if let Some(ref homepage) = app.homepage {
                         match key_event.code {
                             KeyCode::Char('1') => {
@@ -115,6 +123,10 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                             KeyCode::Char('3') => {
                                 app.report_main = Some(ReportMain::new());
                                 app.state = State::ReportMain;
+                            }
+                            KeyCode::Char('n') => {
+                                app.transaction_create = Some(TransactionCreate::new(homepage.email.clone()));
+                                app.state = State::TransactionCreate;
                             }
                             _ => {}
                         }
@@ -133,6 +145,16 @@ pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Termin
                 State::ReportMain => {
                     if key_event.code == KeyCode::Esc {
                         app.state = State::Homepage; // Return to Homepage on Esc
+                    }
+                }
+                State::TransactionCreate => {
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Homepage; // Return to Homepage on Esc
+                    }
+                    if let Some(ref mut transaction_create) = app.transaction_create {
+                        if transaction_create.handle_input(key_event.code, key_event.modifiers).await {
+                            app.state = State::Homepage; // Return to Homepage after transaction create
+                        }
                     }
                 }
             }
