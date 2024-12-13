@@ -1,6 +1,8 @@
 use crate::ui::{signup::SignupPage, cover::CoverPage, login::LoginPage, homepage::Homepage, account_main::AccountMain, category_main::CategoryMain, report_main::ReportMain};
 use crate::ui::transaction_create::TransactionCreate;
+#[allow(unused_imports)]
 use crossterm::event::{self, KeyCode, KeyModifiers, Event};
+#[allow(unused_imports)]
 use std::time::Duration;
 
 pub enum State {

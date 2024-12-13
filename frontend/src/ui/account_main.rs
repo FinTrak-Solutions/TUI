@@ -8,6 +8,7 @@ use crossterm::event::{KeyCode, KeyModifiers};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+#[allow(dead_code)]
 #[derive(Deserialize, Debug)]
 pub struct Account {
     pub account_id: i32,
