@@ -1,22 +1,25 @@
-use crossterm::event::{self, Event, KeyCode};
-use tokio::sync::Mutex;
-use std::sync::Arc;
-use crate::ui::{signup::SignupPage, cover::CoverPage, login::LoginPage, homepage::Homepage};
+use crate::ui::{signup::SignupPage, cover::CoverPage, login::LoginPage, homepage::Homepage, account_main::AccountMain, category_main::CategoryMain, report_main::ReportMain};
+use crossterm::event::KeyCode;
 
-/// Enum to manage app state
 pub enum State {
-    Cover,      // Cover page
-    Signup,     // Signup page
-    Login,      // Login page
-    Homepage,   // Homepage
+    Cover,          // Cover page
+    Signup,         // Signup page
+    Login,          // Login page
+    Homepage,       // Homepage
+    AccountMain,    // Account Main page
+    CategoryMain,   // Category Main page
+    ReportMain,         // Report page
 }
 
 pub struct App {
-    pub state: State,           // Current page/state
-    pub cover_page: CoverPage,  // Cover page
-    pub signup_page: SignupPage, // Signup page
-    pub login_page: LoginPage,  // Login page
-    pub homepage: Option<Homepage>, // Homepage (initialized after successful login)
+    pub state: State,                // Current page/state
+    pub cover_page: CoverPage,       // Cover page
+    pub signup_page: SignupPage,     // Signup page
+    pub login_page: LoginPage,       // Login page
+    pub homepage: Option<Homepage>,  // Homepage (initialized after successful login)
+    pub account_main: Option<AccountMain>, // Account Main (accessed from homepage)
+    pub category_main: Option<CategoryMain>, // Category Main (accessed from homepage)
+    pub report_main: Option<ReportMain>,      // Report page (accessed from homepage)
 }
 
 impl App {
@@ -27,67 +30,109 @@ impl App {
             signup_page: SignupPage::new(),
             login_page: LoginPage::new(),
             homepage: None, // Initially, homepage is not set
+            account_main: None, // Initially, account_main is not set
+            category_main: None, // Initially, category_main is not set
+            report_main: None, // Initially, report page is not set
         }
     }
 }
 
-pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Terminal<B>, app: Arc<Mutex<App>>) -> std::io::Result<()> {
+pub async fn run_app<B: ratatui::backend::Backend>(mut terminal: ratatui::Terminal<B>, mut app: App) -> std::io::Result<()> {
     loop {
-        {
-            let app_guard = app.lock().await;
-            terminal.draw(|f| {
-                match app_guard.state {
-                    State::Cover => app_guard.cover_page.render(f),
-                    State::Signup => app_guard.signup_page.render(f),
-                    State::Login => app_guard.login_page.render(f),
-                    State::Homepage => {
-                        if let Some(ref homepage) = app_guard.homepage {
-                            homepage.render(f); // Render Homepage
-                        }
+        // Render the current state of the app
+        terminal.draw(|f| {
+            match app.state {
+                State::Cover => app.cover_page.render(f),
+                State::Signup => app.signup_page.render(f),
+                State::Login => app.login_page.render(f),
+                State::Homepage => {
+                    if let Some(ref homepage) = app.homepage {
+                        homepage.render(f);
                     }
                 }
-            })?;
-        }
+                State::AccountMain => {
+                    if let Some(ref account_main) = app.account_main {
+                        account_main.render(f);
+                    }
+                }
+                State::CategoryMain => {
+                    if let Some(ref category_main) = app.category_main {
+                        category_main.render(f);
+                    }
+                }
+                State::ReportMain => {
+                    if let Some(ref report_main) = app.report_main {
+                        report_main.render(f);
+                    }
+                }
+            }
+        })?;
 
-        if let Event::Key(key_event) = event::read()? {
-            let mut app_guard = app.lock().await;
-
-            match app_guard.state {
+        // Handle user input
+        if let crossterm::event::Event::Key(key_event) = crossterm::event::read()? {
+            match app.state {
                 State::Cover => {
-                    if app_guard.cover_page.handle_input(key_event.code).await {
+                    if key_event.code == KeyCode::Esc {
                         break; // Quit on Esc
                     }
                     match key_event.code {
-                        KeyCode::Char('1') => app_guard.state = State::Signup,
-                        KeyCode::Char('2') => app_guard.state = State::Login,
+                        KeyCode::Char('1') => app.state = State::Signup,
+                        KeyCode::Char('2') => app.state = State::Login,
                         _ => {}
                     }
                 }
                 State::Signup => {
-                    if app_guard.signup_page.handle_input(key_event.code, key_event.modifiers).await {
-                        app_guard.state = State::Cover; // Return to Cover
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Cover; // Return to Cover when Esc is pressed
+                    } else if app.signup_page.handle_input(key_event.code, key_event.modifiers).await {
+                        app.state = State::Login; // After successful signup, go to Login
                     }
                 }
                 State::Login => {
-                    // Destructure app_guard to separate the login_page and homepage
-                    let App {
-                        state,
-                        login_page,
-                        homepage,
-                        ..
-                    } = &mut *app_guard;
-
-                    if login_page.handle_input(key_event.code, key_event.modifiers, homepage).await {
-                        if homepage.is_some() {
-                            *state = State::Homepage; // Transition to Homepage
-                        } else {
-                            *state = State::Cover; // Return to Cover on Esc
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Cover; // Return to Cover on Esc
+                    } else if app.login_page.handle_input(key_event.code, key_event.modifiers, &mut app.homepage).await {
+                        if app.homepage.is_some() {
+                            app.state = State::Homepage; // Transition to Homepage
                         }
                     }
                 }
                 State::Homepage => {
                     if key_event.code == KeyCode::Esc {
                         break; // Quit from Homepage
+                    }
+                    #[allow(unused_variables)]
+                    if let Some(ref homepage) = app.homepage {
+                        match key_event.code {
+                            KeyCode::Char('1') => {
+                                app.account_main = Some(AccountMain::new());
+                                app.state = State::AccountMain;
+                            }
+                            KeyCode::Char('2') => {
+                                app.category_main = Some(CategoryMain::new());
+                                app.state = State::CategoryMain;
+                            }
+                            KeyCode::Char('3') => {
+                                app.report_main = Some(ReportMain::new());
+                                app.state = State::ReportMain;
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+                State::AccountMain => {
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Homepage; // Return to Homepage on Esc
+                    }
+                }
+                State::CategoryMain => {
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Homepage; // Return to Homepage on Esc
+                    }
+                }
+                State::ReportMain => {
+                    if key_event.code == KeyCode::Esc {
+                        app.state = State::Homepage; // Return to Homepage on Esc
                     }
                 }
             }

@@ -4,3 +4,6 @@ pub mod homepage;
 pub mod login;
 pub mod report;
 pub mod signup;
+pub mod account_main;
+pub mod category_main;
+pub mod report_main;

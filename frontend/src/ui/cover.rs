@@ -54,6 +54,7 @@ impl CoverPage {
     }
 
 
+    #[allow(dead_code)]
     pub async fn handle_input(&self, key: KeyCode) -> bool {
         // Quit on Esc
         if key == KeyCode::Esc {

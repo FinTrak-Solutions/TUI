@@ -84,7 +84,7 @@ impl SignupPage {
         f.render_widget(response_paragraph, chunks[5]);
 
         // Render the bottom notice
-        let notice_text = "Esc to quit | hit Enter to create new user";
+        let notice_text = "Esc to quit | Hit Enter to create new user";
         let notice_paragraph = Paragraph::new(notice_text)
             .style(Style::default().fg(Color::DarkGray).bg(Color::White)) // Grey text, white background
             .alignment(Alignment::Center);
@@ -94,7 +94,7 @@ impl SignupPage {
     pub async fn handle_input(&mut self, key: KeyCode, _modifiers: KeyModifiers) -> bool {
         // Detect Escape (Esc) key for quitting
         if key == KeyCode::Esc {
-            return true; // Signal to quit
+            return false; // Navigate back to Cover
         }
 
         match key {
@@ -105,7 +105,7 @@ impl SignupPage {
                 self.active_field = if self.active_field == 0 { 3 } else { self.active_field - 1 };
             }
             KeyCode::Enter => {
-                self.submit().await;
+                return self.submit().await;
             }
             _ => {
                 match self.active_field {
@@ -120,10 +120,10 @@ impl SignupPage {
         false
     }
 
-    pub async fn submit(&mut self) {
+    pub async fn submit(&mut self) -> bool {
         if self.password.content != self.confirm_password.content {
             self.response_message = "Passwords do not match".to_string();
-            return;
+            return false;
         }
 
         let client = Client::new();
@@ -145,8 +145,9 @@ impl SignupPage {
                     .await
                     .unwrap_or_else(|_| "Failed to parse response body".to_string());
 
-                if status.is_success() {
-                    self.response_message = format!("STATUS_CODE: {}\nMessage: {}", status, message);
+                if status == 201 {
+                    self.response_message = "Signup successful! Redirecting to login...".to_string();
+                    return true; // Return true to navigate to login
                 } else {
                     self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, message);
                 }
@@ -155,5 +156,6 @@ impl SignupPage {
                 self.response_message = format!("Request failed: {}", e);
             }
         }
+        false
     }
 }

@@ -1,27 +1,30 @@
 mod app;
 mod ui;
 
-use app::App;
-use std::io;
-use crossterm::{execute, terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen}};
+use app::{run_app, App};
+use crossterm::{execute, terminal::{self, Clear, ClearType}};
 use ratatui::backend::CrosstermBackend;
 use ratatui::Terminal;
-use std::sync::Arc;
-use tokio::sync::Mutex;
 
 #[tokio::main]
-async fn main() -> Result<(), io::Error> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen)?;
-    let backend = CrosstermBackend::new(stdout);
-    #[allow(unused_mut)]
-    let mut terminal = Terminal::new(backend)?;
+async fn main() -> std::io::Result<()> {
+    let mut stdout = std::io::stdout();
 
-    let app = Arc::new(Mutex::new(App::new()));
-    app::run_app(terminal, app).await?;
+    // Enable raw mode for TUI interaction
+    terminal::enable_raw_mode()?;
 
-    disable_raw_mode()?;
-    execute!(io::stdout(), LeaveAlternateScreen)?;
-    Ok(())
+    let backend = CrosstermBackend::new(&mut stdout);
+    let terminal = Terminal::new(backend)?;
+    let app = App::new();
+
+    // Run the TUI app
+    let result = run_app(terminal, app).await;
+
+    // Disable raw mode before clearing the screen
+    terminal::disable_raw_mode()?;
+
+    // Clear the screen after the TUI ends
+    execute!(stdout, Clear(ClearType::All))?;
+
+    result
 }

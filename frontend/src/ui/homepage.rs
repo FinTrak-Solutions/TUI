@@ -22,9 +22,11 @@ impl Homepage {
     }
 
     pub fn render(&self, f: &mut Frame) {
+        // Set white background for the whole page
         let background = Block::default().style(Style::default().bg(Color::White));
         f.render_widget(background, f.area());
 
+        // Split the frame into three vertical chunks
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
@@ -34,7 +36,7 @@ impl Homepage {
                     Constraint::Min(10),   // Main blocks
                     Constraint::Length(3), // Notice
                 ]
-                .as_ref(),
+                    .as_ref(),
             )
             .split(f.area());
 
@@ -46,7 +48,7 @@ impl Homepage {
                     Constraint::Percentage(50), // Left side for greeting
                     Constraint::Percentage(50), // Centered HOMEPAGE
                 ]
-                .as_ref(),
+                    .as_ref(),
             )
             .split(chunks[0]);
 
@@ -65,6 +67,7 @@ impl Homepage {
             )
             .alignment(Alignment::Right);
 
+        // Render the greeting and title
         f.render_widget(greeting_paragraph, horizontal_layout[0]);
         f.render_widget(title, horizontal_layout[1]);
 
@@ -73,28 +76,30 @@ impl Homepage {
             .direction(Direction::Horizontal)
             .constraints(
                 [
-                    Constraint::Percentage(33),
-                    Constraint::Percentage(33),
-                    Constraint::Percentage(34),
+                    Constraint::Percentage(33), // 33% width for Accounts
+                    Constraint::Percentage(33), // 33% width for Categories
+                    Constraint::Percentage(34), // 34% width for Report
                 ]
-                .as_ref(),
+                    .as_ref(),
             )
             .split(chunks[1]);
 
+        // Accounts block (click 1 to jump)
         let accounts_block = Block::default().title("Accounts").borders(Borders::ALL);
         f.render_widget(accounts_block, main_chunks[0]);
 
+        // Categories block (click 2 to jump)
         let categories_block = Block::default().title("Categories").borders(Borders::ALL);
         f.render_widget(categories_block, main_chunks[1]);
 
-        // add report overview details
+        // Report block (click 3 to jump) with report overview
         let report_block = Block::default().title("Report").borders(Borders::ALL);
         let report_paragraph = Paragraph::new(self.report_overview.clone())
             .wrap(Wrap { trim: true })
             .block(report_block);
         f.render_widget(report_paragraph, main_chunks[2]);
 
-        // Bottom notice
+        // Bottom notice for navigation instructions
         let notice = Paragraph::new("Esc to quit | 1 to Account | 2 to Category | 3 to Report")
             .style(Style::default().fg(Color::DarkGray).bg(Color::White))
             .alignment(Alignment::Center);
