@@ -1,3 +1,4 @@
+use crate::ui::report::create_lines;
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout},
     style::{Color, Modifier, Style},
@@ -8,11 +9,11 @@ use ratatui::{
 pub struct Homepage {
     pub username: String,
     pub email: String,
-    pub report_overview: String,
+    pub report_overview: Vec<String>,
 }
 
 impl Homepage {
-    pub fn new(username: String, email: String, report_overview: String) -> Self {
+    pub fn new(username: String, email: String, report_overview: Vec<String>) -> Self {
         Self {
             username,
             email,
@@ -31,11 +32,11 @@ impl Homepage {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(3),  // Greeting row
-                    Constraint::Min(10),    // Main blocks (Accounts, Categories, Report)
-                    Constraint::Length(5),  // Navigation notice (with extra padding)
+                    Constraint::Length(3), // Greeting row
+                    Constraint::Min(10),   // Main blocks (Accounts, Categories, Report)
+                    Constraint::Length(5), // Navigation notice (with extra padding)
                 ]
-                    .as_ref(),
+                .as_ref(),
             )
             .split(f.area());
 
@@ -47,7 +48,7 @@ impl Homepage {
                     Constraint::Percentage(50), // Left side for greeting
                     Constraint::Percentage(50), // Centered HOMEPAGE
                 ]
-                    .as_ref(),
+                .as_ref(),
             )
             .split(chunks[0]);
 
@@ -79,7 +80,7 @@ impl Homepage {
                     Constraint::Percentage(33), // 33% width for Categories
                     Constraint::Percentage(34), // 34% width for Report
                 ]
-                    .as_ref(),
+                .as_ref(),
             )
             .split(chunks[1]);
 
@@ -93,7 +94,7 @@ impl Homepage {
 
         // Report block (press 3 to jump) with report overview
         let report_block = Block::default().title("Report").borders(Borders::ALL);
-        let report_paragraph = Paragraph::new(self.report_overview.clone())
+        let report_paragraph = Paragraph::new(create_lines(self.report_overview.clone()))
             .wrap(Wrap { trim: true })
             .block(report_block);
         f.render_widget(report_paragraph, main_chunks[2]);
@@ -108,9 +109,12 @@ impl Homepage {
         let create_transaction_notice = Paragraph::new("Press 'n' to create a new transaction")
             .style(Style::default().fg(Color::DarkGray).bg(Color::White))
             .alignment(Alignment::Center);
-        f.render_widget(create_transaction_notice, Layout::default()
-            .direction(Direction::Vertical)
-            .constraints([Constraint::Length(1), Constraint::Length(1)].as_ref())
-            .split(chunks[2])[1]); // Place it right below the first notice
+        f.render_widget(
+            create_transaction_notice,
+            Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(1), Constraint::Length(1)].as_ref())
+                .split(chunks[2])[1],
+        ); // Place it right below the first notice
     }
 }

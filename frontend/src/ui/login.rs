@@ -25,7 +25,7 @@ pub struct LoginPage {
     pub password: InputField,
     pub active_field: usize,
     pub response_message: String,
-    pub report_overview: String,
+    pub report_overview: Vec<String>,
 }
 
 impl LoginPage {
@@ -35,7 +35,7 @@ impl LoginPage {
             password: InputField::new("Password", true),
             active_field: 0,
             response_message: String::new(),
-            report_overview: String::from("To be filled in"),
+            report_overview: vec![],
         }
     }
 
@@ -48,13 +48,13 @@ impl LoginPage {
             .margin(1)
             .constraints(
                 [
-                    Constraint::Length(8),  // ASCII Title
-                    Constraint::Length(3),  // Email Input
-                    Constraint::Length(3),  // Password Input
-                    Constraint::Length(3),  // Response message
-                    Constraint::Length(3),  // Bottom Notice
+                    Constraint::Length(8), // ASCII Title
+                    Constraint::Length(3), // Email Input
+                    Constraint::Length(3), // Password Input
+                    Constraint::Length(3), // Response message
+                    Constraint::Length(3), // Bottom Notice
                 ]
-                    .as_ref(),
+                .as_ref(),
             )
             .split(f.area());
 
@@ -154,14 +154,17 @@ impl LoginPage {
                             self.email.content.clone(),
                             self.report_overview.clone(),
                         ));
-                        self.response_message = "Login successful! Redirecting to homepage...".to_string();
+                        self.response_message =
+                            "Login successful! Redirecting to homepage...".to_string();
                     }
                 } else if status == 400 {
                     self.response_message = "Invalid password. Please try again.".to_string();
                 } else if status == 201 {
-                    self.response_message = "Email not registered. Please sign up first.".to_string();
+                    self.response_message =
+                        "Email not registered. Please sign up first.".to_string();
                 } else {
-                    self.response_message = format!("ERROR_CODE: {}\nMessage: {}", status, raw_body);
+                    self.response_message =
+                        format!("ERROR_CODE: {}\nMessage: {}", status, raw_body);
                 }
             }
             Err(e) => {
