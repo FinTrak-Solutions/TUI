@@ -102,6 +102,8 @@ pub struct ReportMain {
     pub list_states: Vec<ListState>,
     // store currently selected category
     pub active_cat: usize,
+    // trans_mapping[active_cat][list_states[active_cat].selected] = transaction_id
+    pub trans_mapping: Vec<Vec<i32>>,
 }
 
 impl ReportMain {
@@ -112,6 +114,7 @@ impl ReportMain {
             client: Client::new(),
             list_states: Vec::new(),
             active_cat: 0,
+            trans_mapping: Vec::new(),
         };
         instance
     }
@@ -183,7 +186,7 @@ impl ReportMain {
         }
 
         // Bottom notice for navigation instructions (Esc to quit, etc.)
-        let notice = Paragraph::new("Esc: Back | Tab: Switch between Categories")
+        let notice = Paragraph::new("Esc: Back | Tab: Switch between Categories | ↑↓: Switch between Transactions | D: Delete Transaction")
             .style(Style::default().fg(Color::DarkGray).bg(Color::White))
             .wrap(Wrap { trim: true })
             .alignment(Alignment::Center);
@@ -220,6 +223,8 @@ impl ReportMain {
         new_list_state.select(Some(0));
         self.list_states.push(new_list_state);
         let mut items: Vec<ListItem> = vec![];
+        // set up transaction mapping
+        let mut id_mapping: Vec<i32> = vec![];
         for i in 0..transactions.len() {
             let new_item = ListItem::new(format!(
                 "{}: {}",
@@ -227,7 +232,9 @@ impl ReportMain {
                 transactions[i].clone(),
             ));
             items.push(new_item);
+            id_mapping.push(trans_ids[i]);
         }
+        self.trans_mapping.push(id_mapping);
         let list = List::new(items)
             .block(inner_block)
             .style(Style::default().fg(Color::Black))
@@ -264,6 +271,15 @@ impl ReportMain {
                     },
                 ));
             }
+            KeyCode::Char('d') => {
+                if let Some(selected) = self.list_states[self.active_cat].selected() {
+                    let to_delete_id = self.trans_mapping[self.active_cat][selected].clone();
+                    // pop the transaction from the mapping
+                    self.trans_mapping[self.active_cat].remove(selected);
+                    // delete the transaction
+                    self.delete_transaction(to_delete_id).await;
+                }
+            }
             _ => {}
         }
     }
@@ -274,5 +290,22 @@ impl ReportMain {
         }
         self.handle_list_input(key).await;
         false
+    }
+
+    async fn delete_transaction(&mut self, trans_id: i32) {
+        let url = format!("http://localhost:8000/delete_trans?trans_id={}", trans_id);
+
+        match self.client.delete(&url).send().await {
+            Ok(response) => {
+                let status = response.status();
+                match status {
+                    reqwest::StatusCode::OK => {
+                        self.get_categorical_summary().await;
+                    }
+                    _ => {}
+                }
+            }
+            Err(_e) => {}
+        }
     }
 }
