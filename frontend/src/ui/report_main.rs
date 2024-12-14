@@ -129,7 +129,9 @@ impl ReportMain {
         match self.client.get(&url).send().await {
             Ok(response) => match response.status() {
                 reqwest::StatusCode::OK => {
-                    if let Ok(cat_sum) = response.json::<Vec<CategorySummary>>().await {
+                    if let Ok(mut cat_sum) = response.json::<Vec<CategorySummary>>().await {
+                        // sort the categories by nickname
+                        cat_sum.sort_unstable_by_key(|item| (item.nickname.clone()));
                         self.summary_blocks = cat_sum;
                     }
                 }
