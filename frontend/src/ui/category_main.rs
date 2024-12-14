@@ -188,29 +188,18 @@ impl CategoryMain {
         match key {
             KeyCode::Tab => {
                 self.active_field = (self.active_field + 1) % 4; // Only cycle through 4 fields
-                println!("Switched to field {}", self.active_field);
             }
             KeyCode::Enter => {
-                println!("Enter pressed, attempting to submit");
                 self.submit_new_category().await;
             }
             KeyCode::Char(c) => {
                 if self.active_field < 4 { // Only allow input for first 4 fields
                     self.input_strings[self.active_field].push(c);
-                    println!("Added '{}' to field {}. Current value: '{}'",
-                        c,
-                        self.active_field,
-                        self.input_strings[self.active_field]
-                    );
                 }
             }
             KeyCode::Backspace => {
                 if self.active_field < 4 { // Only allow deletion for first 4 fields
                     self.input_strings[self.active_field].pop();
-                    println!("Backspace in field {}. Current value: '{}'",
-                        self.active_field,
-                        self.input_strings[self.active_field]
-                    );
                 }
             }
             _ => {}
@@ -294,15 +283,12 @@ impl CategoryMain {
 
     async fn submit_new_category(&mut self) {
         // Debug print current input values
-        println!("Current input values:");
         for (i, value) in self.input_strings.iter().enumerate() {
-            println!("Field {}: '{}'", i, value);
         }
 
         // Only check the first 4 fields that we actually use
         if self.input_strings[..4].iter().any(|s| s.is_empty()) {
             self.message = "Please fill in all fields".to_string();
-            println!("Validation failed: empty fields found");
             return;
         }
 
@@ -311,7 +297,6 @@ impl CategoryMain {
             Ok(value) => value,
             Err(_) => {
                 self.message = "Invalid budget value".to_string();
-                println!("Validation failed: invalid budget value");
                 return;
             }
         };
@@ -325,8 +310,6 @@ impl CategoryMain {
             budget_freq: self.input_strings[3].clone(),
         };
 
-        println!("Sending request to create category: {:?}", new_category);
-
         match self.client
             .post("http://localhost:8000/category_create")
             .json(&new_category)
@@ -335,10 +318,8 @@ impl CategoryMain {
         {
             Ok(response) => {
                 let status = response.status();
-                println!("Received response with status: {}", status);
 
                 let message = response.text().await.unwrap_or_default();
-                println!("Response message: {}", message);
 
                 match status {
                     reqwest::StatusCode::CREATED => {
@@ -357,7 +338,6 @@ impl CategoryMain {
                 }
             }
             Err(e) => {
-                println!("Error sending request: {:?}", e);
                 self.message = format!("Error creating category: {}", e);
             }
         }
@@ -405,14 +385,10 @@ impl CategoryMain {
                 self.email, field, category.nickname, value
             );
 
-            println!("Sending update request: {}", url);
-
-            match self.client.post(url).send().await {  // Changed from get() to post()
+            match self.client.post(url).send().await {
                 Ok(response) => {
                     let status = response.status();
                     let message = response.text().await.unwrap_or_default();
-
-                    println!("Response status: {}, message: {}", status, message);
 
                     match status {
                         reqwest::StatusCode::OK => {
