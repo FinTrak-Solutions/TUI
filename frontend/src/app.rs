@@ -1,3 +1,4 @@
+use crate::ui::report::get_report_overview;
 use crate::ui::transaction_create::TransactionCreate;
 use crate::ui::{
     account_main::AccountMain, category_main::CategoryMain, cover::CoverPage, homepage::Homepage,
@@ -53,6 +54,10 @@ pub async fn run_app<B: ratatui::backend::Backend>(
 ) -> std::io::Result<()> {
     loop {
         // Render the current state of the app
+        // before rendering, load the overview everytime
+        if let Some(ref mut curr_homepage) = app.homepage {
+            curr_homepage.report_overview = get_report_overview(curr_homepage.email.clone()).await;
+        }
         terminal.draw(|f| match app.state {
             State::Cover => app.cover_page.render(f),
             State::Signup => app.signup_page.render(f),
