@@ -68,7 +68,7 @@ pub async fn run_app<B: ratatui::backend::Backend>(
                 }
             }
             State::CategoryMain => {
-                if let Some(ref category_main) = app.category_main {
+                if let Some(ref mut category_main) = app.category_main {
                     category_main.render(f);
                 }
             }
@@ -134,7 +134,9 @@ pub async fn run_app<B: ratatui::backend::Backend>(
                                 app.state = State::AccountMain;
                             }
                             KeyCode::Char('2') => {
-                                app.category_main = Some(CategoryMain::new());
+                                let mut category_main = CategoryMain::new(homepage.email.clone());
+                                category_main.initialize().await;
+                                app.category_main = Some(category_main);
                                 app.state = State::CategoryMain;
                             }
                             KeyCode::Char('3') => {
@@ -163,8 +165,13 @@ pub async fn run_app<B: ratatui::backend::Backend>(
                     }
                 }
                 State::CategoryMain => {
-                    if key_event.code == KeyCode::Esc {
-                        app.state = State::Homepage; // Return to Homepage on Esc
+                    if let Some(ref mut category_main) = app.category_main {
+                        if category_main
+                            .handle_input(key_event.code, key_event.modifiers)
+                            .await
+                        {
+                            app.state = State::Homepage;
+                        }
                     }
                 }
                 State::ReportMain => {
