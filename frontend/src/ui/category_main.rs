@@ -1,15 +1,16 @@
+use crossterm::event::{KeyCode, KeyModifiers};
 use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
-    widgets::{Block, Borders, List, ListItem, Paragraph, ListState},
+    widgets::{Block, Borders, List, ListItem, ListState, Paragraph},
     Frame,
 };
-use crossterm::event::{KeyCode, KeyModifiers};
-use reqwest::{Client, Url};
+use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct Category {
+    #[allow(dead_code)]
     pub email: String,
     pub nickname: String,
     pub category_type: String,
@@ -32,7 +33,6 @@ pub struct CategoryMain {
     email: String,
     message: String,
     creating_category: bool,
-    new_category: NewCategory,
     active_field: usize,
     client: Client,
     input_strings: [String; 5], // To handle string inputs before conversion
@@ -46,13 +46,6 @@ impl CategoryMain {
             email: email.clone(),
             message: String::new(),
             creating_category: false,
-            new_category: NewCategory {
-                email,
-                nickname: String::new(),
-                category_type: String::new(),
-                budget: 0.0,
-                budget_freq: String::new(),
-            },
             active_field: 0,
             client: Client::new(),
             input_strings: [
@@ -75,16 +68,24 @@ impl CategoryMain {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([
-                Constraint::Length(3),  // Title
-                Constraint::Min(10),    // Content
-                Constraint::Length(3),  // Message/Status
-                Constraint::Length(3),  // Navigation help
-            ].as_ref())
+            .constraints(
+                [
+                    Constraint::Length(3), // Title
+                    Constraint::Min(10),   // Content
+                    Constraint::Length(3), // Message/Status
+                    Constraint::Length(3), // Navigation help
+                ]
+                .as_ref(),
+            )
             .split(f.area());
 
         let title = Paragraph::new("CATEGORY MANAGEMENT")
-            .style(Style::default().fg(Color::Black).bg(Color::White).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::White)
+                    .add_modifier(Modifier::BOLD),
+            )
             .alignment(Alignment::Center);
         f.render_widget(title, chunks[0]);
 
@@ -116,7 +117,8 @@ impl CategoryMain {
     }
 
     fn render_category_list(&mut self, f: &mut Frame, area: Rect) {
-        let items: Vec<ListItem> = self.categories
+        let items: Vec<ListItem> = self
+            .categories
             .iter()
             .map(|category| {
                 ListItem::new(format!(
@@ -132,7 +134,11 @@ impl CategoryMain {
         let list = List::new(items)
             .block(Block::default().borders(Borders::ALL))
             .style(Style::default().fg(Color::Black))
-            .highlight_style(Style::default().add_modifier(Modifier::BOLD).fg(Color::Yellow));
+            .highlight_style(
+                Style::default()
+                    .add_modifier(Modifier::BOLD)
+                    .fg(Color::Yellow),
+            );
 
         f.render_stateful_widget(list, area, &mut self.list_state);
     }
@@ -141,28 +147,37 @@ impl CategoryMain {
         let create_chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([
-                Constraint::Length(3),  // Nickname
-                Constraint::Length(3),  // Category Type
-                Constraint::Length(3),  // Budget
-                Constraint::Length(3),  // Budget Frequency
-            ].as_ref())
+            .constraints(
+                [
+                    Constraint::Length(3), // Nickname
+                    Constraint::Length(3), // Category Type
+                    Constraint::Length(3), // Budget
+                    Constraint::Length(3), // Budget Frequency
+                ]
+                .as_ref(),
+            )
             .split(area);
 
         let fields = [
             ("Nickname", &self.input_strings[0]),
             ("Category Type", &self.input_strings[1]),
             ("Budget", &self.input_strings[2]),
-            ("Budget Frequency (daily/weekly/monthly)", &self.input_strings[3]),
+            (
+                "Budget Frequency (daily/weekly/monthly)",
+                &self.input_strings[3],
+            ),
         ];
 
         for (i, (title, content)) in fields.iter().enumerate() {
             let block = Block::default()
                 .title(*title)
                 .borders(Borders::ALL)
-                .border_style(Style::default().fg(if self.active_field == i { Color::Yellow } else { Color::Black }));
-            let text = Paragraph::new(content.to_string())
-                .style(Style::default().fg(Color::Black));
+                .border_style(Style::default().fg(if self.active_field == i {
+                    Color::Yellow
+                } else {
+                    Color::Black
+                }));
+            let text = Paragraph::new(content.to_string()).style(Style::default().fg(Color::Black));
             f.render_widget(text.block(block), create_chunks[i]);
         }
     }
@@ -193,12 +208,14 @@ impl CategoryMain {
                 self.submit_new_category().await;
             }
             KeyCode::Char(c) => {
-                if self.active_field < 4 { // Only allow input for first 4 fields
+                if self.active_field < 4 {
+                    // Only allow input for first 4 fields
                     self.input_strings[self.active_field].push(c);
                 }
             }
             KeyCode::Backspace => {
-                if self.active_field < 4 { // Only allow deletion for first 4 fields
+                if self.active_field < 4 {
+                    // Only allow deletion for first 4 fields
                     self.input_strings[self.active_field].pop();
                 }
             }
@@ -237,17 +254,22 @@ impl CategoryMain {
             KeyCode::Up => {
                 let selected = self.list_state.selected().unwrap_or(0);
                 if !self.categories.is_empty() {
-                    self.list_state.select(Some(
-                        if selected == 0 { self.categories.len() - 1 } else { selected - 1 }
-                    ));
+                    self.list_state.select(Some(if selected == 0 {
+                        self.categories.len() - 1
+                    } else {
+                        selected - 1
+                    }));
                 }
             }
             KeyCode::Down => {
                 let selected = self.list_state.selected().unwrap_or(0);
                 if !self.categories.is_empty() {
-                    self.list_state.select(Some(
-                        if selected >= self.categories.len() - 1 { 0 } else { selected + 1 }
-                    ));
+                    self.list_state
+                        .select(Some(if selected >= self.categories.len() - 1 {
+                            0
+                        } else {
+                            selected + 1
+                        }));
                 }
             }
             _ => {}
@@ -259,26 +281,27 @@ impl CategoryMain {
     }
 
     async fn fetch_categories(&mut self) {
-        let url = format!("http://localhost:8000/category_summary?email={}", self.email);
+        let url = format!(
+            "http://localhost:8000/category_summary?email={}",
+            self.email
+        );
         match self.client.get(&url).send().await {
-            Ok(response) => {
-                match response.status() {
-                    reqwest::StatusCode::OK => {
-                        if let Ok(categories) = response.json::<Vec<Category>>().await {
-                            self.categories = categories;
-                            if !self.categories.is_empty() && self.list_state.selected().is_none() {
-                                self.list_state.select(Some(0));
-                            }
-                            self.message = format!("Loaded {} categories", self.categories.len());
-                        } else {
-                            self.message = "Failed to parse category data".to_string();
+            Ok(response) => match response.status() {
+                reqwest::StatusCode::OK => {
+                    if let Ok(categories) = response.json::<Vec<Category>>().await {
+                        self.categories = categories;
+                        if !self.categories.is_empty() && self.list_state.selected().is_none() {
+                            self.list_state.select(Some(0));
                         }
-                    }
-                    _ => {
-                        self.message = "Failed to fetch categories".to_string();
+                        self.message = format!("Loaded {} categories", self.categories.len());
+                    } else {
+                        self.message = "Failed to parse category data".to_string();
                     }
                 }
-            }
+                _ => {
+                    self.message = "Failed to fetch categories".to_string();
+                }
+            },
             Err(e) => {
                 self.message = format!("Error fetching categories: {}", e);
             }
@@ -310,7 +333,8 @@ impl CategoryMain {
             budget_freq: self.input_strings[3].clone(),
         };
 
-        match self.client
+        match self
+            .client
             .post("http://localhost:8000/category_create")
             .json(&new_category)
             .send()
