@@ -35,7 +35,8 @@ pub struct CategoryMain {
     creating_category: bool,
     active_field: usize,
     client: Client,
-    input_strings: [String; 5], // To handle string inputs before conversion
+    input_strings: [String; 5],
+    last_operation_nickname: Option<String>,
 }
 
 impl CategoryMain {
@@ -48,13 +49,8 @@ impl CategoryMain {
             creating_category: false,
             active_field: 0,
             client: Client::new(),
-            input_strings: [
-                String::new(), // nickname
-                String::new(), // category_type
-                String::new(), // budget
-                String::new(), // budget_freq
-                String::new(), // extra slot
-            ],
+            input_strings: Default::default(),
+            last_operation_nickname: None,
         };
 
         instance.message = "Loading categories...".to_string();
@@ -290,10 +286,18 @@ impl CategoryMain {
                 reqwest::StatusCode::OK => {
                     if let Ok(categories) = response.json::<Vec<Category>>().await {
                         self.categories = categories;
-                        if !self.categories.is_empty() && self.list_state.selected().is_none() {
+
+                        // If we have a last operated category, find and select it
+                        if let Some(ref nickname) = self.last_operation_nickname {
+                            if let Some(index) = self.categories.iter().position(|c| &c.nickname == nickname) {
+                                self.list_state.select(Some(index));
+                            }
+                        } else if !self.categories.is_empty() && self.list_state.selected().is_none() {
                             self.list_state.select(Some(0));
                         }
+
                         self.message = format!("Loaded {} categories", self.categories.len());
+                        self.last_operation_nickname = None; // Clear the last operation
                     } else {
                         self.message = "Failed to parse category data".to_string();
                     }
@@ -323,6 +327,10 @@ impl CategoryMain {
                 return;
             }
         };
+
+        // Store the nickname for later selection
+        let nickname = self.input_strings[0].clone();
+        self.last_operation_nickname = Some(nickname.clone());
 
         // Create new category
         let new_category = NewCategory {
