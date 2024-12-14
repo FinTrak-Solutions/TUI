@@ -73,7 +73,7 @@ pub async fn run_app<B: ratatui::backend::Backend>(
                 }
             }
             State::ReportMain => {
-                if let Some(ref report_main) = app.report_main {
+                if let Some(ref mut report_main) = app.report_main {
                     report_main.render(f);
                 }
             }
@@ -175,8 +175,13 @@ pub async fn run_app<B: ratatui::backend::Backend>(
                     }
                 }
                 State::ReportMain => {
-                    if key_event.code == KeyCode::Esc {
-                        app.state = State::Homepage; // Return to Homepage on Esc
+                    if let Some(ref mut report_main) = app.report_main {
+                        if report_main
+                            .handle_input(key_event.code, key_event.modifiers)
+                            .await
+                        {
+                            app.state = State::Homepage;
+                        }
                     }
                 }
                 State::TransactionCreate => {
