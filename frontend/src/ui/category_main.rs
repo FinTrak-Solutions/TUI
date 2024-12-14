@@ -282,10 +282,6 @@ impl CategoryMain {
     }
 
     async fn submit_new_category(&mut self) {
-        // Debug print current input values
-        for (i, value) in self.input_strings.iter().enumerate() {
-        }
-
         // Only check the first 4 fields that we actually use
         if self.input_strings[..4].iter().any(|s| s.is_empty()) {
             self.message = "Please fill in all fields".to_string();
