@@ -221,14 +221,18 @@ impl CategoryMain {
                     }
                 }
             }
-            // Add update handling
             KeyCode::Char('u') => {
+                // delete first
                 if let Some(selected) = self.list_state.selected() {
                     if selected < self.categories.len() {
-                        let category_to_update = self.categories[selected].clone();
-                        self.update_category(&category_to_update).await;
+                        let nickname = self.categories[selected].nickname.clone();
+                        self.delete_category(&nickname).await;
                     }
                 }
+                // then create new lol
+                self.creating_category = true;
+                self.input_strings = Default::default();
+                // self.active_field = 0;
             }
             KeyCode::Up => {
                 let selected = self.list_state.selected().unwrap_or(0);
@@ -362,51 +366,6 @@ impl CategoryMain {
             }
             Err(e) => {
                 self.message = format!("Error deleting category: {}", e);
-            }
-        }
-    }
-
-    async fn update_category(&mut self, category: &Category) {
-        let fields = ["nickname", "category_type", "budget", "budget_freq"];
-        let current_values = [
-            &category.nickname,
-            &category.category_type,
-            &category.budget.to_string(),
-            &category.budget_freq,
-        ];
-
-        for (i, (field, &value)) in fields.iter().zip(current_values.iter()).enumerate() {
-            let url = format!(
-                "http://localhost:8000/category_update?email={}&field={}&category_nickname={}&new_value={}",
-                self.email, field, category.nickname, value
-            );
-
-            match self.client.post(url).send().await {
-                Ok(response) => {
-                    let status = response.status();
-                    let message = response.text().await.unwrap_or_default();
-
-                    match status {
-                        reqwest::StatusCode::OK => {
-                            self.message = format!("Updated {} successfully", field);
-                            if i == fields.len() - 1 {
-                                self.fetch_categories().await;
-                            }
-                        }
-                        reqwest::StatusCode::BAD_REQUEST => {
-                            self.message = message;
-                            return;
-                        }
-                        _ => {
-                            self.message = format!("Failed to update {}: {}", field, message);
-                            return;
-                        }
-                    }
-                }
-                Err(e) => {
-                    self.message = format!("Error updating {}: {}", field, e);
-                    return;
-                }
             }
         }
     }
