@@ -1,6 +1,38 @@
 use ratatui::{style::Stylize, text::Line};
 use reqwest::Client;
 
+pub async fn get_category_overview(user_email: String) -> Vec<String> {
+    let client = Client::new();
+    let url = format!(
+        "http://localhost:8000/category_summary?email={}",
+        user_email
+    );
+
+    match client.get(&url).send().await {
+        Ok(response) => {
+            match response.status() {
+                reqwest::StatusCode::OK => {
+                    if let Ok(categories) = response.json::<Vec<crate::ui::category_main::Category>>().await {
+                        categories.iter().map(|cat| {
+                            format!(
+                                "{}: {} (Budget: ${} {})",
+                                cat.nickname,
+                                cat.category_type,
+                                cat.budget,
+                                cat.budget_freq
+                            )
+                        }).collect()
+                    } else {
+                        vec!["Error parsing category data".to_string()]
+                    }
+                }
+                _ => vec!["Failed to fetch categories".to_string()]
+            }
+        }
+        Err(_) => vec!["Error connecting to server".to_string()]
+    }
+}
+
 pub async fn get_report_overview(user_email: String) -> Vec<String> {
     let client = Client::new();
     let overview_url = format!(

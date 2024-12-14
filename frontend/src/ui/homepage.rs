@@ -10,14 +10,16 @@ pub struct Homepage {
     pub username: String,
     pub email: String,
     pub report_overview: Vec<String>,
+    pub category_overview: Vec<String>,
 }
 
 impl Homepage {
-    pub fn new(username: String, email: String, report_overview: Vec<String>) -> Self {
+    pub fn new(username: String, email: String, report_overview: Vec<String>, category_overview: Vec<String>) -> Self {
         Self {
             username,
             email,
             report_overview,
+            category_overview,
         }
     }
 
@@ -88,9 +90,12 @@ impl Homepage {
         let accounts_block = Block::default().title("Accounts").borders(Borders::ALL);
         f.render_widget(accounts_block, main_chunks[0]);
 
-        // Categories block (press 2 to jump)
+        // Categories block (press 2 to jump) with category overview
         let categories_block = Block::default().title("Categories").borders(Borders::ALL);
-        f.render_widget(categories_block, main_chunks[1]);
+        let categories_paragraph = Paragraph::new(create_lines(self.category_overview.clone()))
+            .wrap(Wrap { trim: true })
+            .block(categories_block);
+        f.render_widget(categories_paragraph, main_chunks[1]);
 
         // Report block (press 3 to jump) with report overview
         let report_block = Block::default().title("Report").borders(Borders::ALL);
