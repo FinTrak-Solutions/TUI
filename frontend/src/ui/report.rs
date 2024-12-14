@@ -1,6 +1,36 @@
 use ratatui::{style::Stylize, text::Line};
 use reqwest::Client;
 
+pub async fn get_account_overview(user_email: String) -> Vec<String> {
+    let client = Client::new();
+    let url = format!(
+        "http://localhost:8000/account_summary?email={}",
+        user_email
+    );
+
+    match client.get(&url).send().await {
+        Ok(response) => {
+            match response.status() {
+                reqwest::StatusCode::OK => {
+                    if let Ok(accounts) = response.json::<Vec<crate::ui::account_main::Account>>().await {
+                        accounts.iter().map(|acc| {
+                            format!(
+                                "{}: {}",
+                                acc.account_name,
+                                acc.account_type
+                            )
+                        }).collect()
+                    } else {
+                        vec!["Error parsing account data".to_string()]
+                    }
+                }
+                _ => vec!["Failed to fetch accounts".to_string()]
+            }
+        }
+        Err(_) => vec!["Error connecting to server".to_string()]
+    }
+}
+
 pub async fn get_category_overview(user_email: String) -> Vec<String> {
     let client = Client::new();
     let url = format!(

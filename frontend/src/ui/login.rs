@@ -149,12 +149,14 @@ impl LoginPage {
                 if status == 200 && raw_body.contains("Login successful") {
                     self.report_overview = get_report_overview(login_data.email.clone()).await;
                     let category_overview = get_category_overview(login_data.email.clone()).await;
+                    let account_overview = get_account_overview(login_data.email.clone()).await;
                     if let Some(username) = raw_body.split_whitespace().next() {
                         *homepage = Some(Homepage::new(
                             username.to_string(),
                             self.email.content.clone(),
                             self.report_overview.clone(),
                             category_overview,
+                            account_overview,
                         ));
                         self.response_message =
                             "Login successful! Redirecting to homepage...".to_string();
